@@ -1,6 +1,8 @@
+require('dotenv').config(); // ← MUST be first, before anything else
 const express = require('express');
 const cors = require('cors');
 const session = require("express-session");
+
 
 const passport = require("passport");
 const LocalStrategy = require("passport-local")
@@ -19,7 +21,7 @@ app.use(cors(corsOption));
 
 // use session with generation in terminal:
 app.use(session({
-  secret: '415f114dd377f51f8ed583650fab14fbd012a219c3e5fdf09817b1f039a8083d4651e07401aafbbb47d50809cd98998f646531c19841eeb90d8c1bd52d02cac7',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false
 }))
@@ -58,11 +60,7 @@ passport.deserializeUser(function (user, callback) {
 // Register route
 
 app.post('/register', async (req, res) => {
-  console.log('Body received:', req.body); // ← ADD THIS
   const { username, email, password } = req.body;
-  console.log('username:', username);      // ← ADD THIS
-  console.log('email:', email);            // ← ADD THIS  
-  console.log('password:', password);      // ← ADD THIS
   try {
     const user = await dao.registerUser(username, email, password);
     res.status(201).json(user);
@@ -82,6 +80,24 @@ app.post("/login", (req, res, next) => {
     });
   })(req, res, next);
     });
+
+// session route temporary
+app.get('/session-route', (req,res) => {
+  res.json(req.session);
+  
+})
+
+app.post('/task', isLoggin, async (req, res) => {
+  try {
+  const user = req.user.id
+  const {title, description} = req.body
+  const result = await dao.addTask(title, description, user)
+  res.status(201).json(result); //201 created!
+  } catch (err) {
+    res.status(500).json({err: err.message});
+  }
+
+})
 
 
 
